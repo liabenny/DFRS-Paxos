@@ -10,15 +10,16 @@ public class EventRecord implements Serializable {
 
     private Reservation reservation;
 
-    private int time;
+    private int seqNum;
 
-    private int processId;
-
-    public EventRecord(EventType type, Reservation reservation, int time, int processId) {
+    public EventRecord(EventType type, Reservation reservation, int seqNum) {
         this.type = type;
         this.reservation = reservation;
-        this.time = time;
-        this.processId = processId;
+        this.seqNum = seqNum;
+    }
+
+    public static long getSerialVersionUID() {
+        return serialVersionUID;
     }
 
     public EventType getType() {
@@ -37,20 +38,12 @@ public class EventRecord implements Serializable {
         this.reservation = reservation;
     }
 
-    public int getTime() {
-        return time;
+    public int getSeqNum() {
+        return seqNum;
     }
 
-    public void setTime(int time) {
-        this.time = time;
-    }
-
-    public int getProcessId() {
-        return processId;
-    }
-
-    public void setProcessId(int processId) {
-        this.processId = processId;
+    public void setSeqNum(int seqNum) {
+        this.seqNum = seqNum;
     }
 
     @Override
@@ -58,8 +51,7 @@ public class EventRecord implements Serializable {
         return "EventRecord{" +
                 "type=" + type +
                 ", reservation=" + reservation +
-                ", time=" + time +
-                ", processId=" + processId +
+                ", seqNum=" + seqNum +
                 '}';
     }
 }

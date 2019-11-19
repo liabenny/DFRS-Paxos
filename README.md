@@ -1,2 +1,2 @@
-# DFRS
-Distributed Flight rpi.dsa.DFRS.Entity.Reservation System based on Wuu-Bernstein Algorithm
+# Distributed Flight Reservation System - Paxos
+An implementation of Paxos Algorithm for a distributed flight reservation system.

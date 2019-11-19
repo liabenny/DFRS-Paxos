@@ -2,7 +2,8 @@ package rpi.dsa.DFRS;
 
 import rpi.dsa.DFRS.Constants.Constants;
 import rpi.dsa.DFRS.Entity.Host;
-import rpi.dsa.DFRS.Utils.Clock;
+import rpi.dsa.DFRS.Roles.Acceptor;
+import rpi.dsa.DFRS.Roles.Learner;
 
 import static java.lang.System.exit;
 import static rpi.dsa.DFRS.Constants.Constants.*;
@@ -14,11 +15,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-public class app {
+public class Service {
 
-    private static Host myHost;
+    public static Host myHost;
 
-    private static String hostName;
+    public static String hostName;
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -26,59 +27,38 @@ public class app {
             System.out.println("Please specify site ID.");
             return;
         }
-        String siteId = args[0];
-        init(siteId);
+        hostName = args[0];
+        init();
         listen();
         start();
     }
 
-    private static void init(String siteId) {
-        /* 1. Get local host information */
-        String ipAddr = null;
-        try {
-            InetAddress inetAddress = InetAddress.getLocalHost();
-            ipAddr = inetAddress.getHostAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-
-        /* 2. Resolve local host configuration from knownhost.json */
+    private static void init() {
+        /* 1. Resolve local host configuration from knownhost.json */
         for (Map.Entry<String, Host> entry : Constants.HOSTS.entrySet()) {
             Host host = entry.getValue();
             String site = entry.getKey();
-            if (host.getIpAddr().equals(ipAddr) && site.equals(siteId)) {
-                hostName = site;
+            if (site.equals(hostName)) {
                 myHost = host;
                 break;
             }
         }
-//        /* ================================TEST===================================== */
-//        hostName = "test";
-//        myHost = HOSTS.get(hostName);
-//        /* ================================TEST===================================== */
 
         if (hostName == null) {
             throw new RuntimeException("Unknown local host");
         }
-//        System.out.println("[SERVICE] resolve local ip address success!");
 
-
-        /* 3. Init time table and local clock */
-        Clock.init(hostName);
-
-        /* 4. Init dictionary and event record */
-        Resource.init(hostName);
-
+        /* 2. Init dictionary and event record */
+        Learner.init(hostName);
     }
 
     private static void listen() {
-        MsgHandler handler = new MsgHandler(hostName, myHost);
-        Thread thread = new Thread(handler);
+        Acceptor acceptor = new Acceptor();
+        Thread thread = new Thread(acceptor);
         thread.start();
     }
 
     private static void start() {
-//        System.out.println("[SERVICE] start service, process ID is " + NAME_TO_INDEX.get(hostName));
         InputStreamReader inputStreamReader = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(inputStreamReader);
         while (true) {
@@ -110,27 +90,12 @@ public class app {
                     case LOG:
                         CmdHandler.log(args);
                         break;
-                    case SEND:
-                        CmdHandler.send(args);
-                        break;
-                    case SENDALL:
-                        CmdHandler.sendAll(args);
-                        break;
-                    case SMALLSEND:
-                        CmdHandler.smallSend(args);
-                        break;
-                    case SMALLSENDALL:
-                        CmdHandler.smallSendAll(args);
-                        break;
-                    case CLOCK:
-                        CmdHandler.clock(args);
-                        break;
                     default:
                         System.out.println("Unknown command");
                         break;
                 }
             } catch (IOException e) {
-                throw new RuntimeException("App: Read command failed");
+                throw new RuntimeException("Service: Read command failed");
             }
         }
     }

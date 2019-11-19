@@ -1,4 +1,4 @@
-package rpi.dsa.DFRS;
+package rpi.dsa.DFRS.Roles;
 
 import rpi.dsa.DFRS.Constants.Constants;
 import rpi.dsa.DFRS.Entity.EventRecord;
@@ -8,16 +8,13 @@ import rpi.dsa.DFRS.Utils.FileUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Resource {
-
-    private static int pid;
+public class Learner {
 
     private static List<EventRecord> records;
 
     private static List<Reservation> reservations;
 
     public static void init(String hostName) {
-        pid = Constants.NAME_TO_INDEX.get(hostName);
 
         /* Read Log file or initialize */
         if (FileUtils.isExist(Constants.LOG_FILE)) {
@@ -32,12 +29,17 @@ public class Resource {
         } else {
             reservations = new ArrayList<>();
         }
+    }
 
-        /* ================================TEST===================================== */
-//        pid = Constants.NAME_TO_INDEX.get(hostName);
-//        records = new ArrayList<>();
-//        reservations = new ArrayList<>();
-        /* ================================TEST===================================== */
+    public static void checkHoles() {
+        //TODO finish holes checking
+    }
+
+    public static void learnProposal(EventRecord proposal) {
+        Reservation reservation = proposal.getReservation();
+        reservations.add(reservation);
+        records.add(proposal);
+        //TODO save new log entry in stable memory.
     }
 
     public static List<EventRecord> getRecords() {
@@ -48,7 +50,4 @@ public class Resource {
         return reservations;
     }
 
-    public static int getPid() {
-        return pid;
-    }
 }
