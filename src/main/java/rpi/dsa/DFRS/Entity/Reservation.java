@@ -12,12 +12,13 @@ public class Reservation implements Serializable {
 
     private List<Integer> flight_nums;
 
-    private int status;
-
-    public Reservation(String client_name, List<Integer> flight_nums, int status) {
+    public Reservation(String client_name, List<Integer> flight_nums) {
         this.client_name = client_name;
         this.flight_nums = flight_nums;
-        this.status = status;
+    }
+
+    public static long getSerialVersionUID() {
+        return serialVersionUID;
     }
 
     public String getClient_name() {
@@ -34,23 +35,6 @@ public class Reservation implements Serializable {
 
     public void setFlight_nums(List<Integer> flight_nums) {
         this.flight_nums = flight_nums;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    @Override
-    public String toString() {
-        return "Reservation{" +
-                "client_name='" + client_name + '\'' +
-                ", flight_nums=" + flight_nums +
-                ", status=" + status +
-                '}';
     }
 
     @Override

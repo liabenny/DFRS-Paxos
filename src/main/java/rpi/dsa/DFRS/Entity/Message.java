@@ -5,49 +5,94 @@ import java.util.List;
 
 public class Message implements Serializable {
 
-    private static final long serialVersionUID = -913063426662718136L;
+    private MessageType type;
 
-    private Integer src;
+    private Integer num;
 
-    private List<EventRecord> records;
+    private EventRecord value;
 
-    private int[][] time_table;
-
-    private int[] time_row;
-
-    private Integer type;
-
-    public Message(Integer src, List<EventRecord> records, int[][] time_table, Integer type) {
-        this.src = src;
-        this.records = records;
-        this.time_table = time_table;
-        this.type = type;
+    private Message() {
     }
 
-    public Message(Integer src, List<EventRecord> records, int[] time_row, Integer type) {
-        this.src = src;
-        this.records = records;
-        this.time_row = time_row;
-        this.type = type;
-    }
-
-    public List<EventRecord> getRecords() {
-        return records;
-    }
-
-    public int[][] getTime_table() {
-        return time_table;
-    }
-
-    public Integer getSrc() {
-        return src;
-    }
-
-    public int[] getTime_row() {
-        return time_row;
-    }
-
-    public Integer getType() {
+    public MessageType getType() {
         return type;
     }
+
+    private void setType(MessageType type) {
+        this.type = type;
+    }
+
+    public Integer getNum() {
+        return num;
+    }
+
+    private void setNum(Integer num) {
+        this.num = num;
+    }
+
+    public EventRecord getValue() {
+        return value;
+    }
+
+    private void setValue(EventRecord value) {
+        this.value = value;
+    }
+
+    public static Message prepare(Integer prepareNum) {
+        Message message = new Message();
+        message.setType(MessageType.PREPARE);
+        message.setNum(prepareNum);
+        return message;
+    }
+
+    public static Message promise(Integer accNum, EventRecord accValue) {
+        Message message = new Message();
+        message.setType(MessageType.PROMISE);
+        message.setNum(accNum);
+        message.setValue(accValue);
+        return message;
+    }
+
+    public static Message proposal(Integer proposeNum, EventRecord proposeValue) {
+        Message message = new Message();
+        message.setType(MessageType.PROPOSAL);
+        message.setNum(proposeNum);
+        message.setValue(proposeValue);
+        return message;
+    }
+
+    public static Message ack(Integer ackNum) {
+        Message message = new Message();
+        message.setType(MessageType.ACK);
+        message.setNum(ackNum);
+        return message;
+    }
+
+    public static Message nack(Integer nackNum) {
+        Message message = new Message();
+        message.setType(MessageType.NACK);
+        message.setNum(nackNum);
+        return message;
+    }
+
+    public static Message query() {
+        Message message = new Message();
+        message.setType(MessageType.QUERY);
+        return message;
+    }
+
+    public static Message reply(Integer maxLogSlot) {
+        Message message = new Message();
+        message.setType(MessageType.REPLY);
+        message.setNum(maxLogSlot);
+        return message;
+    }
+
+    public static Message commit(EventRecord commitValue) {
+        Message message = new Message();
+        message.setType(MessageType.COMMIT);
+        message.setValue(commitValue);
+        return message;
+    }
+
 }

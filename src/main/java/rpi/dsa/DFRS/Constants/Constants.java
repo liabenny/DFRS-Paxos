@@ -17,6 +17,8 @@ public class Constants {
 
     public static final int MAX_FLIGHT = 20;
 
+    public static final long TIMEOUT = 5000;
+
 
     /**
      * CMD - User Input Command
@@ -29,32 +31,7 @@ public class Constants {
 
     public static final String LOG = "log";
 
-    public static final String SEND = "send";
-
-    public static final String SENDALL = "sendall";
-
-    public static final String SMALLSEND = "smallsend";
-
-    public static final String SMALLSENDALL = "smallsendall";
-
-    public static final String CLOCK = "clock";
-
     public static final String QUIT = "quit";
-
-
-    /**
-     * CONST - Reservation status
-     */
-    public static final int PENDING = 1;
-
-    public static final int COMFIRMED = 0;
-
-    /**
-     * CONST - Message Type
-     */
-    public static final int NORMAL = 1;
-
-    public static final int SMALL = 2;
 
     /**
      * FILE - file configuration
