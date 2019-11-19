@@ -3,6 +3,12 @@ package rpi.dsa.DFRS.Entity;
 import java.io.Serializable;
 import java.util.List;
 
+
+public enum MessageType{
+    PREPARE, PROMISE, PROMISE_NACK, ACCEPT, ACCEPT_NACK, ACCEPTED
+}
+
+
 public class Message implements Serializable {
 
     private static final long serialVersionUID = -913063426662718136L;

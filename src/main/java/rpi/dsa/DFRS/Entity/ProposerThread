@@ -1,0 +1,71 @@
+package rpi.dsa.DFRS.Entity;
+
+import java.lang.Thread;
+import java.util.concurrent;
+import rpi.dsa.DFRS.Entity.Message;
+import rpi.dsa.DFRS.Entity.MessageType;
+
+
+public class ProposerThread implements Runnable{
+    // This is our message queue, the proposer will pop any messages
+    // from the queue and determine what needs to be done based on which message is received.
+    BlockingQueue<Message> messageQueue;
+    private static long timeoutDuration = 1;
+    private static TimeUnit timeoutUnits = TimeUnit.SECONDS;
+
+    // The idea here will be that we have two blocking queue read loops, one main loop
+    // When we have nothing to do and are just waiting for user input
+    // The second loop will be us pulling from the blockig queue with timeout.
+    // When we go to send a message we will create a timeout timer, keeping track of how long it has been since we sent
+    // The message originally. We will pull off the queue with that timer. If no message happens the blocking will stop and
+    // We can handle it as we want. If some message is recieved before timeout we handle it and then pull from the queue with
+    // an updated timeout that is less whatever time it took to recieve the first response.
+
+
+    public ProposerThread() {
+        this.messageQueue = new LinkedBlockingQueue<Message>()
+    }
+
+    public ProposerThread(BlockingQueue<Message> inQueue) {
+        this.messageQueue = inQueue;
+    }
+
+    public void run(){
+
+        while(true){
+
+        }
+
+    }
+
+    private void waitForResponse(){
+        boolean finish = false;
+        while(!finish){
+            Message in_message = messageQueue.poll(timeoutDuration, timeoutUnits);
+
+            handleMessage(in_message)
+
+        }
+
+    }
+
+    private handleMessage(Message message){
+        switch(message.getType()){
+            case MessageType.PREPARE:
+
+                break;
+            case MessageType.PROMISE:
+                break;
+            case MessageType.PROMISE_NACK:
+                break;
+            case MessageType.ACCEPT:
+                break;
+            case MessageType.ACCEPT_NACK:
+                break;
+            case MessageType.ACCEPTED:
+                break;
+        }
+    }
+
+
+}
