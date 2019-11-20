@@ -46,6 +46,7 @@ public class Proposer {
         this.nackCounter = 0;
         this.promiseCounter = 0;
         promiseMessages = new ArrayList<>();
+        messageQueue = new LinkedBlockingQueue<Message>();
 
         String ip = Service.myHost.getIpAddr();
         Integer port = Service.myHost.getUdpStartPort();
@@ -63,13 +64,14 @@ public class Proposer {
         /* Choose a propose number */
         int propNum = generateNum();
         maxPropNum = propNum;
-
+        int currentPhase = 1;
         // PHASE1: send prepare(n) to acceptors
         prepare(propNum);
 
         // PHASE1: wait promise(accNum, accValue) from majority acceptors
-        boolean succeed = waitPromise();
+        boolean succeed = waitForMajority(currentPhase);
 
+        //TODO: May want to functionize the retry logic
         /* retry PHASE1 */
         int retry = 0;
         while (!succeed && retry < 2) {
@@ -77,7 +79,7 @@ public class Proposer {
             reset();
             propNum = generateNum();
             prepare(propNum);
-            succeed = waitPromise();
+            succeed = waitForMajority(currentPhase);
         }
         if (!succeed) {
             return false;
@@ -85,18 +87,20 @@ public class Proposer {
 
         // PHASE2: send proposal(n, v) to acceptors
         propose(propNum, value);
-
+        currentPhase = 2;
 
         /* retry PHASE1 and PHASE2 */
-        succeed = waitAck();
+        succeed = waitForMajority(currentPhase);
         while (!succeed && retry < 2) {
             retry++;
             reset();
+            currentPhase = 1;
             propNum = generateNum();
             prepare(propNum);
-            succeed = waitPromise();
+            succeed = waitForMajority(currentPhase);
             if (succeed) {
                 propose(propNum, value);
+                currentPhase = 2;
             }
         }
         if (!succeed) {
@@ -128,41 +132,74 @@ public class Proposer {
         }
     }
 
-    private boolean waitPromise() {
-        /* 1. Set a timeout for waiting promise */
+    private boolean checkPromise(Message message){
+        if (message.getType().equals(MessageType.PROMISE)) {
+            ackCounter++;
+        } else if (message.getType().equals(MessageType.PROMISE_NACK)) {
+            maxPropNum = Math.max(maxPropNum, message.getNum());
+            nackCounter++;
+        }
+    }
+
+    private boolean checkAccepted(Message message){
+        if (message.getType().equals(MessageType.ACK)) {
+            ackCounter++;
+        } else if (message.getType().equals(MessageType.NACK)) {
+
+            nackCounter++;
+        }
+    }
+
+    private boolean waitForMajority(int currPhase){
+        /* 1. Set a timeout for waiting ack */
         long start = System.currentTimeMillis();
-        long end = start + Constants.TIMEOUT;
+        socket.setSoTimeout(Constants.TIMEOUT_ms)
 
         try {
-            while (System.currentTimeMillis() > end) {
-                /* 2. Keep receiving promise message */
+            while (true) {
+                /* 2. Keep receiving ack message */
                 byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
                 DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
                 socket.receive(datagramPacket);
                 Message message = MsgUtil.deserialize(bytes);
-                if (message.getType().equals(MessageType.PROMISE)) {
-                    promiseMessages.add(message);
-                    promiseCounter++;
-                } else if (message.getType().equals(MessageType.NACK)) {
-                    // update the max propose number
-                    maxPropNum = Math.max(maxPropNum, message.getNum());
+
+                /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
+                *     and nacks should be ignored, since a majority was alredy found. */
+                if ((currPhase == 1 && checkPromise(message)) || (currPhase == 2 && checkAccepted(message))){
+                    ackCounter++;
+                }
+                else{
                     nackCounter++;
+                    maxPropNum = Math.max(maxPropNum, message.getNum());
                 }
 
-                /* 3. Receive promise from majority acceptors */
-                if (promiseCounter > Constants.HOSTS.size() / 2) {
+                /* 4. Receive ack from majority acceptors */
+                if (ackCounter > Constants.HOSTS.size() / 2) {
                     return true;
                 } else if (nackCounter > Constants.HOSTS.size() / 2) {
                     nackCounter = 0;
                     return false;
+                } else{
+                    /* 5. Update our socket timeout with the remaining time */
+                    long elapsed_ms = System.currentTimeMillis() - start;
+                    long remaining_ms = Constants.TIMEOUT - elapsed_ms;
+                    if(remaining_ms > 0){
+                        socket.setSoTimeout(remaining_ms)
+                    } else{
+                        return false;
+                    }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        catch (SocketTimeoutException e){
+            /* 6. Didn't receive enough ack in time */
+            nackCounter = 0;
+            return false;
+        }
 
-        /* 4. Didn't receive enough promise in time */
-        nackCounter = 0;
+        // We should not be reaching this line. If we do somehow return false.
         return false;
     }
 
@@ -200,42 +237,6 @@ public class Proposer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private boolean waitAck() {
-        /* 1. Set a timeout for waiting ack */
-        long start = System.currentTimeMillis();
-        long end = start + Constants.TIMEOUT;
-
-        try {
-            while (System.currentTimeMillis() > end) {
-                /* 2. Keep receiving ack message */
-                byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
-                DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
-                socket.receive(datagramPacket);
-                Message message = MsgUtil.deserialize(bytes);
-                if (message.getType().equals(MessageType.ACK)) {
-                    ackCounter++;
-                } else if (message.getType().equals(MessageType.NACK)) {
-                    maxPropNum = Math.max(maxPropNum, message.getNum());
-                    nackCounter++;
-                }
-
-                /* 3. Receive ack from majority acceptors */
-                if (ackCounter > Constants.HOSTS.size() / 2) {
-                    return true;
-                } else if (nackCounter > Constants.HOSTS.size() / 2) {
-                    nackCounter = 0;
-                    return false;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        /* 4. Didn't receive enough ack in time */
-        nackCounter = 0;
-        return false;
     }
 
     private void commit() {

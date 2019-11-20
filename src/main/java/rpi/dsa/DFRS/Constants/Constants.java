@@ -17,7 +17,7 @@ public class Constants {
 
     public static final int MAX_FLIGHT = 20;
 
-    public static final long TIMEOUT = 5000;
+    public static final long TIMEOUT_ms = 5000;
 
 
     /**

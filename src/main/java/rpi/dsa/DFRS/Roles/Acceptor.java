@@ -79,7 +79,7 @@ public class Acceptor implements Runnable {
             maxAccNum = propNum;
             response = Message.promise(accNum, accValue);
         } else {
-            response = Message.nack(maxAccNum);
+            response = Message.promise_nack(maxAccNum);
         }
 
         /* Reply to proposer */

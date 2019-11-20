@@ -59,6 +59,13 @@ public class Message implements Serializable {
         return message;
     }
 
+    public static Message promise_nack(Integer nackNum) {
+        Message message = new Message();
+        message.setType(MessageType.PROMISE_NACK);
+        message.setNum(nackNum);
+        return message;
+    }
+
     public static Message proposal(Integer proposeNum, EventRecord proposeValue) {
         Message message = new Message();
         message.setType(MessageType.PROPOSAL);
