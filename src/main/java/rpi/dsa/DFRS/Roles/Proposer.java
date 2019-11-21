@@ -46,7 +46,6 @@ public class Proposer {
         this.nackCounter = 0;
         this.promiseCounter = 0;
         promiseMessages = new ArrayList<>();
-        messageQueue = new LinkedBlockingQueue<Message>();
 
         String ip = Service.myHost.getIpAddr();
         Integer port = Service.myHost.getUdpStartPort();
@@ -132,30 +131,21 @@ public class Proposer {
         }
     }
 
-    private boolean checkPromise(Message message){
-        if (message.getType().equals(MessageType.PROMISE)) {
+    private void handleResponse(Message message, MessageType ack, MessageType nack){
+        if (message.getType().equals(ack)){
             ackCounter++;
-        } else if (message.getType().equals(MessageType.PROMISE_NACK)) {
+        } else if (message.getType().equals(nack)){
             maxPropNum = Math.max(maxPropNum, message.getNum());
             nackCounter++;
         }
     }
 
-    private boolean checkAccepted(Message message){
-        if (message.getType().equals(MessageType.ACK)) {
-            ackCounter++;
-        } else if (message.getType().equals(MessageType.NACK)) {
-
-            nackCounter++;
-        }
-    }
-
     private boolean waitForMajority(int currPhase){
-        /* 1. Set a timeout for waiting ack */
-        long start = System.currentTimeMillis();
-        socket.setSoTimeout(Constants.TIMEOUT_ms)
-
         try {
+            /* 1. Set a timeout for waiting ack */
+            long start = System.currentTimeMillis();
+            socket.setSoTimeout(Math.toIntExact(Constants.TIMEOUT_ms));
+
             while (true) {
                 /* 2. Keep receiving ack message */
                 byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
@@ -164,13 +154,11 @@ public class Proposer {
                 Message message = MsgUtil.deserialize(bytes);
 
                 /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
-                *     and nacks should be ignored, since a majority was alredy found. */
-                if ((currPhase == 1 && checkPromise(message)) || (currPhase == 2 && checkAccepted(message))){
-                    ackCounter++;
-                }
-                else{
-                    nackCounter++;
-                    maxPropNum = Math.max(maxPropNum, message.getNum());
+                *     and nacks should be ignored, since a majority was already found. */
+                if (currPhase == 1){
+                    handleResponse(message, MessageType.PROMISE, MessageType.PROMISE_NACK);
+                } else if (currPhase == 2){
+                    handleResponse(message, MessageType.ACK, MessageType.NACK);
                 }
 
                 /* 4. Receive ack from majority acceptors */
@@ -182,21 +170,21 @@ public class Proposer {
                 } else{
                     /* 5. Update our socket timeout with the remaining time */
                     long elapsed_ms = System.currentTimeMillis() - start;
-                    long remaining_ms = Constants.TIMEOUT - elapsed_ms;
+                    int remaining_ms = Math.toIntExact(Constants.TIMEOUT_ms - elapsed_ms);
                     if(remaining_ms > 0){
-                        socket.setSoTimeout(remaining_ms)
+                        socket.setSoTimeout(remaining_ms);
                     } else{
                         return false;
                     }
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        catch (SocketTimeoutException e){
+        } catch (java.net.SocketTimeoutException e){
             /* 6. Didn't receive enough ack in time */
             nackCounter = 0;
             return false;
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
 
         // We should not be reaching this line. If we do somehow return false.
