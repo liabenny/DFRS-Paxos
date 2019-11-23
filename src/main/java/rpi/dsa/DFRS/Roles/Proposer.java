@@ -59,6 +59,23 @@ public class Proposer {
         }
     }
 
+    public Proposer(String ip, int port, int pid) {
+        this.maxPropNum = 0;
+        this.ackCounter = 0;
+        this.nackCounter = 0;
+        this.promiseCounter = 0;
+        this.pid = pid;
+
+        promiseMessages = new ArrayList<>();
+
+        try {
+            InetAddress address = InetAddress.getByName(ip);
+            socket = new DatagramSocket(port, address);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public boolean request(EventRecord value) {
         /* Choose a propose number */
         int propNum = generateNum();

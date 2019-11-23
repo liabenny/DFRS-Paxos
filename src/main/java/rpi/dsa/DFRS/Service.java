@@ -2,8 +2,11 @@ package rpi.dsa.DFRS;
 
 import rpi.dsa.DFRS.Constants.Constants;
 import rpi.dsa.DFRS.Entity.Host;
+import rpi.dsa.DFRS.Roles.Proposer;
 import rpi.dsa.DFRS.Roles.Acceptor;
 import rpi.dsa.DFRS.Roles.Learner;
+import rpi.dsa.DFRS.Entity.EventRecord;
+import rpi.dsa.DFRS.Entity.EventType;
 
 import static java.lang.System.exit;
 import static rpi.dsa.DFRS.Constants.Constants.*;
@@ -59,6 +62,7 @@ public class Service {
     }
 
     private static void start() {
+        Proposer proposer = new Proposer();
         InputStreamReader inputStreamReader = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(inputStreamReader);
         while (true) {
@@ -79,10 +83,16 @@ public class Service {
                 String[] args = cmd.split(" ");
                 switch (args[0]) {
                     case RESERVE:
-                        CmdHandler.reserve(args);
+                        EventRecord reservation = CmdHandler.reserve(args);
+                        if (reservation.getType() != EventType.INVALID){
+                            proposer.request(reservation);
+                        }
                         break;
                     case CANCEL:
-                        CmdHandler.cancel(args);
+                        EventRecord cancellation = CmdHandler.cancel(args);
+                        if (cancellation.getType() != EventType.INVALID){
+                            proposer.request(cancellation);
+                        }
                         break;
                     case VIEW:
                         CmdHandler.view(args);

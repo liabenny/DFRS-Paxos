@@ -3,7 +3,9 @@ package rpi.dsa.DFRS.Entity;
 public enum EventType {
     INS("Reserve"),
 
-    DEL("Cancel");
+    DEL("Cancel"),
+
+    INVALID("Invalid");
 
     private String operation;
 
