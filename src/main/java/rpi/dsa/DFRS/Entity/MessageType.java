@@ -6,19 +6,17 @@ public enum MessageType {
 
     PROMISE("Promise"),
 
-    PROMISE_NACK("Promise_NACK"),
-
     PROPOSAL("Proposal"),
 
     ACK("ACK"),
 
     NACK("NACK"),
 
+    COMMIT("Commit"),
+
     QUERY("Query"),
 
-    REPLY("Reply"),
-
-    COMMIT("Commit");
+    REPLY("Reply");
 
     private String operation;
 

@@ -24,4 +24,3 @@ function compile(){
 }
 
 compile
-exit 0

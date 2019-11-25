@@ -1,5 +1,7 @@
 package rpi.dsa.DFRS.Entity;
 
+import rpi.dsa.DFRS.Utils.MsgUtil;
+
 import java.io.Serializable;
 
 public class EventRecord implements Serializable {
@@ -10,12 +12,12 @@ public class EventRecord implements Serializable {
 
     private Reservation reservation;
 
-    private int seqNum;
+    private boolean checkPoint;
 
-    public EventRecord(EventType type, Reservation reservation, int seqNum) {
+    public EventRecord(EventType type, Reservation reservation) {
+        this.checkPoint = false;
         this.type = type;
         this.reservation = reservation;
-        this.seqNum = seqNum;
     }
 
     public static long getSerialVersionUID() {
@@ -38,20 +40,18 @@ public class EventRecord implements Serializable {
         this.reservation = reservation;
     }
 
-    public int getSeqNum() {
-        return seqNum;
+    public boolean isCheckPoint() {
+        return checkPoint;
     }
 
-    public void setSeqNum(int seqNum) {
-        this.seqNum = seqNum;
+    public void setCheckPoint(boolean checkPoint) {
+        this.checkPoint = checkPoint;
     }
 
     @Override
     public String toString() {
-        return "EventRecord{" +
-                "type=" + type +
-                ", reservation=" + reservation +
-                ", seqNum=" + seqNum +
-                '}';
+        return String.format("%s %s %s", type.getDesc(),
+                reservation != null ? reservation.getClientName() : "null",
+                reservation != null ? MsgUtil.ListToString(reservation.getFlightNums()) : "null");
     }
 }

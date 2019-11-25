@@ -1,17 +1,27 @@
 package rpi.dsa.DFRS.Entity;
 
+import rpi.dsa.DFRS.Service;
+
 import java.io.Serializable;
-import java.util.List;
 
 public class Message implements Serializable {
 
+    private static final long serialVersionUID = -3334360323606431729L;
+
+    private String senderName;
+
     private MessageType type;
+
+    private Integer logNum;
+
+    private Integer propNum;
 
     private Integer num;
 
     private EventRecord value;
 
     private Message() {
+        this.senderName = Service.hostName;
     }
 
     public MessageType getType() {
@@ -22,11 +32,27 @@ public class Message implements Serializable {
         this.type = type;
     }
 
+    public Integer getPropNum() {
+        return propNum;
+    }
+
+    private void setPropNum(Integer propNum) {
+        this.propNum = propNum;
+    }
+
+    public Integer getLogNum() {
+        return logNum;
+    }
+
+    private void setLogNum(Integer logNum) {
+        this.logNum = logNum;
+    }
+
     public Integer getNum() {
         return num;
     }
 
-    private void setNum(Integer num) {
+    public void setNum(Integer num) {
         this.num = num;
     }
 
@@ -38,67 +64,125 @@ public class Message implements Serializable {
         this.value = value;
     }
 
-    public static Message prepare(Integer prepareNum) {
+    public String getSenderName() {
+        return senderName;
+    }
+
+    /**
+     * Generate PREPARE(logNum, prepareNum) message
+     *
+     * @param logNum     log entry that needs to decide for this Synod execution
+     * @param prepareNum propose number for prepare message
+     * @return message
+     */
+    public static Message prepare(Integer logNum, Integer prepareNum) {
         Message message = new Message();
         message.setType(MessageType.PREPARE);
-        message.setNum(prepareNum);
+        message.setLogNum(logNum);
+        message.setPropNum(prepareNum);
         return message;
     }
 
-    public static Message promise(Integer accNum, EventRecord accValue) {
+
+    /**
+     * Generate PROMISE(propNum, accNum, accValue) message
+     *
+     * @param accNum   latest accept number
+     * @param accValue latest accept value
+     * @return message
+     */
+    public static Message promise(Integer propNum, Integer accNum, EventRecord accValue) {
         Message message = new Message();
         message.setType(MessageType.PROMISE);
+        message.setPropNum(propNum);
         message.setNum(accNum);
         message.setValue(accValue);
         return message;
     }
 
-    public static Message promise_nack(Integer nackNum) {
-        Message message = new Message();
-        message.setType(MessageType.PROMISE_NACK);
-        message.setNum(nackNum);
-        return message;
-    }
 
-    public static Message proposal(Integer proposeNum, EventRecord proposeValue) {
+    /**
+     * Generate PROPOSAL(logNum, propNum, value) message
+     *
+     * @param logNum       log entry number
+     * @param proposeNum   propose number
+     * @param proposeValue EventRecord corresponding to log number
+     * @return message
+     */
+    public static Message proposal(Integer logNum, Integer proposeNum, EventRecord proposeValue) {
         Message message = new Message();
         message.setType(MessageType.PROPOSAL);
-        message.setNum(proposeNum);
+        message.setLogNum(logNum);
+        message.setPropNum(proposeNum);
         message.setValue(proposeValue);
         return message;
     }
 
+
+    /**
+     * Generate ACK(ackNum) message
+     *
+     * @param ackNum propose number that was accepted
+     * @return message
+     */
     public static Message ack(Integer ackNum) {
         Message message = new Message();
         message.setType(MessageType.ACK);
-        message.setNum(ackNum);
+        message.setPropNum(ackNum);
         return message;
     }
 
+
+    /**
+     * Generate NACK(nackNum) message
+     *
+     * @param nackNum max accept number among Synod instances corresponds to log numbers
+     * @return message
+     */
     public static Message nack(Integer nackNum) {
         Message message = new Message();
         message.setType(MessageType.NACK);
-        message.setNum(nackNum);
+        message.setPropNum(nackNum);
         return message;
     }
 
+
+    /**
+     * Generate COMMIT(logNum, value) message
+     *
+     * @param logNum      log entry number
+     * @param commitValue list of EventRecord corresponding to log numbers
+     * @return message
+     */
+    public static Message commit(Integer logNum, EventRecord commitValue) {
+        Message message = new Message();
+        message.setLogNum(logNum);
+        message.setType(MessageType.COMMIT);
+        message.setValue(commitValue);
+        return message;
+    }
+
+    /**
+     * Generate QUERY() message
+     *
+     * @return message
+     */
     public static Message query() {
         Message message = new Message();
         message.setType(MessageType.QUERY);
         return message;
     }
 
-    public static Message reply(Integer maxLogSlot) {
+    /**
+     * Generate REPLY(maxLogNum)
+     *
+     * @param maxLogNum maximum log entry number
+     * @return message
+     */
+    public static Message reply(Integer maxLogNum) {
         Message message = new Message();
         message.setType(MessageType.REPLY);
-        message.setNum(maxLogSlot);
-        return message;
-    }
-
-    public static Message commit(EventRecord commitValue) {
-        Message message = new Message();
-        message.setType(MessageType.COMMIT);
-        message.setValue(commitValue);
+        message.setLogNum(maxLogNum);
         return message;
     }
 

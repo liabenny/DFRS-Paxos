@@ -17,7 +17,15 @@ public class Constants {
 
     public static final int MAX_FLIGHT = 20;
 
-    public static final long TIMEOUT_ms = 5000;
+    public static final long TIMEOUT_MS = 5000;
+
+    public static final int SOCK_TIMEOUT_MS = 200;
+
+    public static final int CHECK_POINT_INTERVAL = 5;
+
+    public static final int BLOCKING_QUEUE_CAP = 8;
+
+    public static final int PROPOSER_RETRY_TIME = 3;
 
 
     /**
@@ -33,14 +41,19 @@ public class Constants {
 
     public static final String QUIT = "quit";
 
+
     /**
      * FILE - file configuration
      */
-    public static final String LOG_FILE = "log.out";
+    public static final String LOG_FILE = "log.txt";
+
+    public static final String ACCEPTOR_FILE = "accept_state.out";
 
     public static final String RESV_FILE = "reservations.out";
 
-    public static final String TIME_FILE = "timetable.out";
+    public static final String IS_CHECKPOINT = "CHECKPOINT";
+
+    public static final String NOT_CHECKPOINT = "-";
 
 
     /**

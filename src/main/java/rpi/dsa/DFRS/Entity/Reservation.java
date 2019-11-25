@@ -8,33 +8,29 @@ public class Reservation implements Serializable {
 
     private static final long serialVersionUID = -8940279946849104966L;
 
-    private String client_name;
+    private String clientName;
 
-    private List<Integer> flight_nums;
+    private List<Integer> flightNums;
 
-    public Reservation(String client_name, List<Integer> flight_nums) {
-        this.client_name = client_name;
-        this.flight_nums = flight_nums;
+    public Reservation(String clientName, List<Integer> flightNums) {
+        this.clientName = clientName;
+        this.flightNums = flightNums;
     }
 
-    public static long getSerialVersionUID() {
-        return serialVersionUID;
+    public String getClientName() {
+        return clientName;
     }
 
-    public String getClient_name() {
-        return client_name;
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
     }
 
-    public void setClient_name(String client_name) {
-        this.client_name = client_name;
+    public List<Integer> getFlightNums() {
+        return flightNums;
     }
 
-    public List<Integer> getFlight_nums() {
-        return flight_nums;
-    }
-
-    public void setFlight_nums(List<Integer> flight_nums) {
-        this.flight_nums = flight_nums;
+    public void setFlightNums(List<Integer> flightNums) {
+        this.flightNums = flightNums;
     }
 
     @Override
@@ -42,12 +38,12 @@ public class Reservation implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Reservation that = (Reservation) o;
-        return Objects.equals(client_name, that.client_name) &&
-                Objects.equals(flight_nums, that.flight_nums);
+        return Objects.equals(clientName, that.clientName) &&
+                Objects.equals(flightNums, that.flightNums);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(client_name, flight_nums);
+        return Objects.hash(clientName, flightNums);
     }
 }

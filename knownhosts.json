@@ -1,0 +1,25 @@
+{
+  "hosts": {
+    "apple": {
+      "tcp_start_port": 9006,
+      "tcp_end_port": 9008,
+      "udp_start_port": 15006,
+      "udp_end_port": 15008,
+      "ip_address": "172.18.0.2"
+    },
+    "banana": {
+      "tcp_start_port": 9009,
+      "tcp_end_port": 9011,
+      "udp_start_port": 15009,
+      "udp_end_port": 15011,
+      "ip_address": "172.18.0.3"
+    },
+    "cherry": {
+      "tcp_start_port": 9012,
+      "tcp_end_port": 9014,
+      "udp_start_port": 15012,
+      "udp_end_port": 15014,
+      "ip_address": "172.18.0.4"
+    }
+  }
+}

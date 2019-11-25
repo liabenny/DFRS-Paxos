@@ -2,11 +2,12 @@ package rpi.dsa.DFRS.Utils;
 
 import rpi.dsa.DFRS.Constants.Constants;
 import rpi.dsa.DFRS.Entity.EventRecord;
+import rpi.dsa.DFRS.Entity.EventType;
 import rpi.dsa.DFRS.Entity.Reservation;
+import rpi.dsa.DFRS.Roles.Acceptor;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class FileUtils {
 
@@ -31,31 +32,50 @@ public class FileUtils {
         return content.toString();
     }
 
-    public static void saveRecordsToFile(List<EventRecord> records) {
+    public static void appendLogToFile(Integer logNum, EventRecord record) {
+        if (record == null || record.getReservation() == null) {
+            System.out.println("Wrong Record " + record);
+            return;
+        }
         try {
-            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Constants.LOG_FILE));
-            out.writeObject(records);
-            out.close();
+            FileWriter writer = new FileWriter(Constants.LOG_FILE, true);
+            String logEntry = String.format("%d %s %s\n", logNum, record,
+                    record.isCheckPoint() ? Constants.IS_CHECKPOINT : Constants.NOT_CHECKPOINT);
+
+            writer.write(logEntry);
+            writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static List<EventRecord> readRecordsFromFlie() {
-        List<EventRecord> records = new ArrayList<>();
+    public static TreeMap<Integer, EventRecord> recoverLogFromFile() {
+        TreeMap<Integer, EventRecord> logList = new TreeMap<>();
         try {
-            ObjectInputStream in = new ObjectInputStream(new FileInputStream(Constants.LOG_FILE));
-            //noinspection unchecked
-            records = (List<EventRecord>) in.readObject();
-            in.close();
+            FileInputStream inputStream = new FileInputStream(Constants.LOG_FILE);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 
-        } catch (IOException | ClassNotFoundException e) {
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                String[] infos = line.split(" ");
+                Integer logNum = Integer.parseInt(infos[0]);
+                EventType type = "reserve".equals(infos[1]) ? EventType.RESERVE : EventType.CANCEL;
+                String cliName = infos[2];
+                List<Integer> flights = MsgUtil.StringToList(infos[3]);
+                Reservation reservation = new Reservation(cliName, flights);
+                EventRecord record = new EventRecord(type, reservation);
+                if (infos[4].equals(Constants.IS_CHECKPOINT)) {
+                    record.setCheckPoint(true);
+                }
+                logList.put(logNum, record);
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        return records;
+        return logList;
     }
 
-    public static void saveResvToFile(List<Reservation> reservations) {
+    public static void saveReservationsToFile(List<Reservation> reservations) {
         try {
             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Constants.RESV_FILE));
             out.writeObject(reservations);
@@ -65,39 +85,47 @@ public class FileUtils {
         }
     }
 
-    public static List<Reservation> readResvFromFile() {
+    public static List<Reservation> readReservationsFromFile() {
         List<Reservation> reservations = new ArrayList<>();
+        File file = new File(Constants.RESV_FILE);
+
+        /* If file not exist, return empty list */
+        if (!file.exists()) {
+            return reservations;
+        }
+
+        /* Otherwise load information from file */
         try {
-            ObjectInputStream in = new ObjectInputStream(new FileInputStream(Constants.RESV_FILE));
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
             //noinspection unchecked
             reservations = (List<Reservation>) in.readObject();
             in.close();
-
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
         return reservations;
     }
 
-    public static void saveTimeTableToFile(int[][] timeTable) {
+    public static void saveAcceptorStateToFile(Map<Integer, Acceptor.AcceptorState> accState) {
         try {
-            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Constants.TIME_FILE));
-            out.writeObject(timeTable);
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(Constants.ACCEPTOR_FILE));
+            out.writeObject(accState);
             out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static int[][] readTimeTableFromFile() {
-        int[][] timeTable = null;
+    public static Map<Integer, Acceptor.AcceptorState> readAcceptorStateFromFile() {
+        Map<Integer, Acceptor.AcceptorState> accState = new HashMap<>();
         try {
-            ObjectInputStream in = new ObjectInputStream(new FileInputStream(Constants.TIME_FILE));
-            timeTable = (int[][]) in.readObject();
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream(Constants.ACCEPTOR_FILE));
+            //noinspection unchecked
+            accState = (Map<Integer, Acceptor.AcceptorState>) in.readObject();
             in.close();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return timeTable;
+        return accState;
     }
 }
