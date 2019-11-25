@@ -162,10 +162,10 @@ public class Service {
                 String[] args = cmd.split(" ");
                 switch (args[0]) {
                     case RESERVE:
-                        CmdHandler.reserve(args);
+                        CmdHandler.reserve(args, hostName);
                         break;
                     case CANCEL:
-                        CmdHandler.cancel(args);
+                        CmdHandler.cancel(args, hostName);
                         break;
                     case VIEW:
                         CmdHandler.view(args);

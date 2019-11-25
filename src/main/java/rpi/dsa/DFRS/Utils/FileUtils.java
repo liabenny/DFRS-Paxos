@@ -62,9 +62,10 @@ public class FileUtils {
                 EventType type = "reserve".equals(infos[1]) ? EventType.RESERVE : EventType.CANCEL;
                 String cliName = infos[2];
                 List<Integer> flights = MsgUtil.StringToList(infos[3]);
+                String hostName = infos[4];
                 Reservation reservation = new Reservation(cliName, flights);
-                EventRecord record = new EventRecord(type, reservation);
-                if (infos[4].equals(Constants.IS_CHECKPOINT)) {
+                EventRecord record = new EventRecord(type, reservation, hostName);
+                if (infos[5].equals(Constants.IS_CHECKPOINT)) {
                     record.setCheckPoint(true);
                 }
                 logList.put(logNum, record);

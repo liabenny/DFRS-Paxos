@@ -202,6 +202,19 @@ public class Learner implements Runnable {
         return maxLogNum;
     }
 
+    /**
+     * Return the winning site for a given log position.
+     *
+     * */
+    public static String winningSite(int logNumber){
+        String winning_site = "";
+        if (logList.containsKey(logNumber)){
+            EventRecord record = logList.get(logNumber);
+            winning_site = record.getProposerHost();
+        }
+        return winning_site;
+    }
+
     public static TreeMap<Integer, EventRecord> getLogList() {
         return logList;
     }

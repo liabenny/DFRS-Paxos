@@ -125,6 +125,90 @@ public class Proposer {
     }
 
     /**
+     * Given a pair of assenting and dissenting messages, increases
+     * or decreases ack and nack counters appropriately.
+     *
+     * */
+    private void handleResponse(Message message, MessageType ack, MessageType nack){
+        if (message.getType().equals(ack)){
+            ackCounter++;
+
+            // Print the ack information to sys err.
+            System.err.printf("[Proposer] Received %s(%d, '%s') from %s\n",
+                    message.getType().getDesc(),
+                    message.getNum(),
+                    message.getValue(),
+                    message.getSenderName());
+        } else if (message.getType().equals(nack)){
+            maxPropNum = Math.max(maxPropNum, message.getNum());
+            nackCounter++;
+
+            // Print the nack information to sys err.
+            System.err.printf("[Proposer] Received %s(%d) from %s\n",
+                    message.getType().getDesc(), message.getNum(), message.getSenderName());
+        }
+    }
+
+    /**
+     * Waits for responses from a majority of sites. Will return true if
+     * a majority responds positively and false if the timeout is reached or a
+     * majority respond negatively.
+     *
+    * */
+    private boolean waitForMajority(int currPhase){
+        try {
+            /* 1. Set a timeout for waiting ack */
+            long start = System.currentTimeMillis();
+            socket.setSoTimeout(Math.toIntExact(Constants.TIMEOUT_MS));
+
+            while (true) {
+                /* 2. Keep receiving ack message */
+                byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
+                DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
+                socket.receive(datagramPacket);
+                Message message = MsgUtil.deserialize(bytes);
+
+                /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
+                 *     and nacks should be ignored, since a majority was already found. */
+                if (currPhase == 1){
+                    handleResponse(message, MessageType.PROMISE, MessageType.PROMISE_NACK);
+                } else if (currPhase == 2){
+                    handleResponse(message, MessageType.ACK, MessageType.NACK);
+                }
+
+                /* 4. Receive ack from majority acceptors */
+                if (ackCounter > Constants.HOSTS.size() / 2) {
+                    return true;
+                } else if (nackCounter > Constants.HOSTS.size() / 2) {
+                    nackCounter = 0;
+                    return false;
+                } else{
+                    /* 5. Update our socket timeout with the remaining time */
+                    long elapsed_ms = System.currentTimeMillis() - start;
+                    int remaining_ms = Math.toIntExact(Constants.TIMEOUT_MS - elapsed_ms);
+                    if(remaining_ms > 0){
+                        socket.setSoTimeout(remaining_ms);
+                    } else{
+                        return false;
+                    }
+                }
+            }
+        } catch (java.net.SocketTimeoutException e){
+            /* 6. Didn't receive enough ack in time */
+            nackCounter = 0;
+            return false;
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // We should not be reaching this line. If we do somehow return false.
+        return false;
+    }
+
+
+
+    /**
      * Start an execution of Synod algorithm for one log entry.
      *
      * @param logNum log slot number
@@ -132,42 +216,53 @@ public class Proposer {
      * @return if the recommended value was adopted, then return true. Otherwise, return false.
      */
     public boolean request(Integer logNum, EventRecord value) {
-        /* Choose a propose number */
-        int propNum = generateNum();
-
-        // PHASE1: send prepare(n) to acceptors
-        prepare(logNum, propNum);
-
-        // PHASE1: wait promise(propNum, accNum, accValue) from majority acceptors
-        boolean succeed = waitPromise(propNum);
-
-        /* retry PHASE1 */
+        /* Prepare our proposal number and phase variables */
+        int propNum = 0;
+        int currentPhase = 0;
+        boolean succeed = false;
         int retry = 0;
-        while (!succeed && retry < 2) {
-            retry++;
-            reset();
+
+        /* Paxos Optimization, if we were the winning site from the previous log number we can skip phase 1.  */
+        if (!Learner.winningSite(logNum-1).equals(Service.hostName)) {
+            /* Choose a propose number */
             propNum = generateNum();
+
+            // PHASE1: send prepare(n) to acceptors
+            currentPhase = 1;
             prepare(logNum, propNum);
-            succeed = waitPromise(propNum);
-        }
-        if (!succeed) {
-            return false;
+
+            // PHASE1: wait promise(accNum, accValue) from majority acceptors
+            succeed = waitForMajority(currentPhase);
+
+            /* retry PHASE1 */
+            while (!succeed && retry < 2) {
+                retry++;
+                reset();
+                propNum = generateNum();
+                prepare(logNum, propNum);
+                succeed = waitForMajority(currentPhase);
+            }
+            if (!succeed) {
+                return false;
+            }
         }
 
         // PHASE2: send proposal(n, v) to acceptors
         propose(logNum, propNum, value);
-
+        currentPhase = 2;
 
         /* retry PHASE1 and PHASE2 */
         succeed = waitAck();
         while (!succeed && retry < 2) {
             retry++;
             reset();
+            currentPhase = 1;
             propNum = generateNum();
             prepare(logNum, propNum);
             succeed = waitPromise(propNum);
             if (succeed) {
                 propose(logNum, propNum, value);
+                currentPhase = 2;
                 succeed = waitAck();
             }
         }

@@ -14,10 +14,13 @@ public class EventRecord implements Serializable {
 
     private boolean checkPoint;
 
-    public EventRecord(EventType type, Reservation reservation) {
+    private String proposerHost;
+
+    public EventRecord(EventType type, Reservation reservation, String host) {
         this.checkPoint = false;
         this.type = type;
         this.reservation = reservation;
+        this.proposerHost = host;
     }
 
     public static long getSerialVersionUID() {
@@ -48,10 +51,20 @@ public class EventRecord implements Serializable {
         this.checkPoint = checkPoint;
     }
 
+    public String getProposerHost() {
+        return proposerHost;
+    }
+
+    public void setProposerHost(String proposerHost) {
+        this.proposerHost = proposerHost;
+    }
+
+
     @Override
     public String toString() {
-        return String.format("%s %s %s", type.getDesc(),
+        return String.format("%s %s %s %s", type.getDesc(),
                 reservation != null ? reservation.getClientName() : "null",
-                reservation != null ? MsgUtil.ListToString(reservation.getFlightNums()) : "null");
+                reservation != null ? MsgUtil.ListToString(reservation.getFlightNums()) : "null",
+                proposerHost);
     }
 }
