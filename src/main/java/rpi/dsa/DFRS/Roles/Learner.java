@@ -92,7 +92,7 @@ public class Learner implements Runnable {
 
         /* Learn new log entry */
         logList.put(logNum, record);
-        System.out.println("<DEBUG> current log list: " + logList);
+//        System.out.println("<DEBUG> current log list: " + logList);
 
         if (Service.isUnderRecovery()) {
             /* When site is recovering, do not update reservations and checkpoint */
@@ -213,10 +213,10 @@ public class Learner implements Runnable {
      * @param maxLogNum max log entry number
      */
     public static void fillHoles(Integer maxLogNum) {
-        System.out.printf("<DEBUG> fill hole before LogNum: %d\n", maxLogNum);
+//        System.out.printf("<DEBUG> fill hole before LogNum: %d\n", maxLogNum);
         int logNum;
         while ((logNum = getLostLogNum(maxLogNum)) > 0) {
-            System.out.println("<DEBUG> fill hole in logNum: " + logNum);
+//            System.out.println("<DEBUG> fill hole in logNum: " + logNum);
             synchronized (Proposer.class) {
                 Proposer proposer = new Proposer();
                 proposer.request(logNum, null, true);
@@ -257,7 +257,7 @@ public class Learner implements Runnable {
 
         /* Fill in holes in the log */
         int maxLogNum = getMaxLogNum();
-        System.out.println("<DEBUG> maxLogNum: " + maxLogNum);
+//        System.out.println("<DEBUG> maxLogNum: " + maxLogNum);
         fillHoles(maxLogNum);
 
         return logList.keySet().size() + 1;
@@ -271,7 +271,7 @@ public class Learner implements Runnable {
      * @return log number of hole
      */
     private static int getLostLogNum(Integer maxLogNum) {
-        System.out.println("<DEBUG> current log list (Learner): " + logList);
+//        System.out.println("<DEBUG> current log list (Learner): " + logList);
         for (int logNum = 1; logNum <= maxLogNum; logNum++) {
             if (!logList.containsKey(logNum)) {
                 return logNum;

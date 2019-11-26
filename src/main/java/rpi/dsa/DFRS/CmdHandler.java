@@ -38,7 +38,7 @@ class CmdHandler {
 
         /* 3. Update the log information and get next log number */
         int logNum = Learner.getNextLogNum();
-        System.out.println("<DEBUG> logNum: " + logNum);
+//        System.out.println("<DEBUG> logNum: " + logNum);
 
         /* 4. Check flight space and client name */
         List<Reservation> reservations = Learner.getReservations();

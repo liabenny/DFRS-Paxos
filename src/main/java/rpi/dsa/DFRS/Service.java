@@ -48,6 +48,7 @@ public class Service {
         }
         hostName = args[0];
         init();
+        System.out.println(HOSTS);
         start();
     }
 
@@ -57,7 +58,7 @@ public class Service {
             Host host = entry.getValue();
             String site = entry.getKey();
             if (site.equals(Service.hostName)) {
-                System.out.println("[Server] host: " + Service.hostName);
+//                System.out.println("[Server] host: " + Service.hostName);
                 myHost = host;
                 break;
             }

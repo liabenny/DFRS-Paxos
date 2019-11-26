@@ -17,9 +17,9 @@ public class Constants {
 
     public static final int MAX_FLIGHT = 20;
 
-    public static final long TIMEOUT_MS = 5000;
+    public static final long TIMEOUT_MS = 500;
 
-    public static final int SOCK_TIMEOUT_MS = 200;
+    public static final int SOCK_TIMEOUT_MS = 100;
 
     public static final int CHECK_POINT_INTERVAL = 5;
 

@@ -60,12 +60,8 @@ public class Host {
 
     @Override
     public String toString() {
-        return "Host{" +
-                "tcpStartPort=" + tcpStartPort +
-                ", tcpEndPort=" + tcpEndPort +
-                ", udpStartPort=" + udpStartPort +
-                ", udpEndPort=" + udpEndPort +
-                ", ipAddr='" + ipAddr + '\'' +
-                '}';
+        return "udpStartPort=" + udpStartPort +
+                        ", udpEndPort=" + udpEndPort +
+                        ", ipAddr='" + ipAddr + '\'';
     }
 }
