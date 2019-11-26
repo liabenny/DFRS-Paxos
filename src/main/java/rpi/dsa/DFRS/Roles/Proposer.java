@@ -161,32 +161,33 @@ public class Proposer {
             long end = System.currentTimeMillis() + Constants.TIMEOUT_MS;
 
             while (System.currentTimeMillis() <= end) {
-                /* 2. Keep receiving ack message */
-                byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
-                DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
-                socket.receive(datagramPacket);
-                Message message = MsgUtil.deserialize(bytes);
+                try{
+                    /* 2. Keep receiving ack message */
+                    byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
+                    DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
+                    socket.receive(datagramPacket);
+                    Message message = MsgUtil.deserialize(bytes);
 
-                /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
-                 *     and nacks should be ignored, since a majority was already found. */
-                if (currPhase == 1){
-                    handleResponse(message, MessageType.PROMISE, MessageType.PROMISE_NACK);
-                } else if (currPhase == 2){
-                    handleResponse(message, MessageType.ACK, MessageType.NACK);
-                }
+                    /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
+                     *     and nacks should be ignored, since a majority was already found. */
+                    if (currPhase == 1){
+                        handleResponse(message, MessageType.PROMISE, MessageType.PROMISE_NACK);
+                    } else if (currPhase == 2){
+                        handleResponse(message, MessageType.ACK, MessageType.NACK);
+                    }
 
-                /* 4. Receive ack from majority acceptors */
-                if (ackCounter > Constants.HOSTS.size() / 2) {
-                    return true;
-                } else if (nackCounter > Constants.HOSTS.size() / 2) {
-                    nackCounter = 0;
-                    return false;
+                    /* 4. Receive ack from majority acceptors */
+                    if (ackCounter > Constants.HOSTS.size() / 2) {
+                        return true;
+                    } else if (nackCounter > Constants.HOSTS.size() / 2) {
+                        nackCounter = 0;
+                        return false;
+                    }
+                } catch (java.net.SocketTimeoutException e){
+                    // Pass
                 }
             }
-        } catch (java.net.SocketTimeoutException e){
-            // Pass
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -248,7 +249,7 @@ public class Proposer {
             currentPhase = 1;
             propNum = generateNum();
             prepare(logNum, propNum);
-            succeed = waitPromise(propNum);
+            succeed = waitForMajority(propNum);
             if (succeed) {
                 propose(logNum, propNum, value);
                 currentPhase = 2;
