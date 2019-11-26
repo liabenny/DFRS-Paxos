@@ -41,7 +41,7 @@ public class Proposer {
     static {
         String ip = Service.myHost.getIpAddr();
         Integer port = Service.myHost.getUdpStartPort();
-        pid = Constants.NAME_TO_INDEX.get(Constants.hostName);
+        pid = Constants.NAME_TO_INDEX.get(Service.hostName);
 
         try {
             InetAddress address = InetAddress.getByName(ip);
@@ -211,7 +211,7 @@ public class Proposer {
 
         /* Paxos Optimization, if we were the winning site from the previous log number we can skip phase 1.  */
         String previousWinner = Learner.winningSite(logNum - 1);
-        if (recovery || !previousWinner.equals(Constants.hostName)) {
+        if (recovery || !previousWinner.equals(Service.hostName)) {
             /* Choose a propose number */
             propNum = generateNum();
 

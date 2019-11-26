@@ -46,7 +46,7 @@ public class Service {
             System.out.println("Please specify site ID.");
             return;
         }
-        Constants.hostName = args[0];
+        hostName = args[0];
         init();
         start();
     }
@@ -56,14 +56,14 @@ public class Service {
         for (Map.Entry<String, Host> entry : Constants.HOSTS.entrySet()) {
             Host host = entry.getValue();
             String site = entry.getKey();
-            if (site.equals(Constants.hostName)) {
-                System.out.println("[Server] host: " + Constants.hostName);
+            if (site.equals(Service.hostName)) {
+                System.out.println("[Server] host: " + Service.hostName);
                 myHost = host;
                 break;
             }
         }
 
-        if (Constants.hostName == null) {
+        if (Service.hostName == null) {
             throw new RuntimeException("Unknown local host");
         }
 

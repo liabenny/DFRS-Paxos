@@ -62,7 +62,7 @@ class CmdHandler {
 
         /* 5. Start new Synod instance */
         Reservation reservation = new Reservation(cliName, flights);
-        EventRecord record = new EventRecord(EventType.RESERVE, reservation, Constants.hostName);
+        EventRecord record = new EventRecord(EventType.RESERVE, reservation, Service.hostName);
 
         boolean succeed;
         synchronized (Proposer.class) {
@@ -104,7 +104,7 @@ class CmdHandler {
         }
 
         /* 4. Start new Synod instance */
-        EventRecord record = new EventRecord(EventType.CANCEL, target, Constants.hostName);
+        EventRecord record = new EventRecord(EventType.CANCEL, target, Service.hostName);
         boolean succeed;
         synchronized (Proposer.class) {
             Proposer proposer = new Proposer();
