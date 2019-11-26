@@ -93,7 +93,7 @@ public class Service {
 
     private static void recover() {
         TreeMap<Integer, EventRecord> logList = Learner.getLogList();
-        List<Reservation> reservations = Learner.getReservations();
+        List<Reservation> reservationsBak = Learner.getReservationsBak();
 
         /* 1. Query the max log entry number */
         Proposer proposer = new Proposer();
@@ -118,15 +118,15 @@ public class Service {
 
             /* Replay log and update reservation */
             if (record.getType().equals(EventType.RESERVE)) {
-                reservations.add(record.getReservation());
+                reservationsBak.add(record.getReservation());
             } else {
-                reservations.remove(record.getReservation());
+                reservationsBak.remove(record.getReservation());
             }
 
             if (curLogNum % CHECK_POINT_INTERVAL == 0) {
 
                 /* Reach new checkpoint, save reservations to file */
-                FileUtils.saveReservationsToFile(reservations);
+                FileUtils.saveReservationsToFile(reservationsBak);
                 record.setCheckPoint(true);
                 FileUtils.appendLogToFile(curLogNum, record);
 
@@ -138,6 +138,7 @@ public class Service {
         }
 
         /* 5. Set the flag when finish recovery */
+        Learner.recoverReservations();
         setUnderRecovery(false);
     }
 
