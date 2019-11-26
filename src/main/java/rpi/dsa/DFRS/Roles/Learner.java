@@ -16,6 +16,8 @@ public class Learner implements Runnable {
 
     private static List<Reservation> reservations;
 
+    private static List<Reservation> reservationsBak;
+
     private final BlockingQueue<Map.Entry<Integer, EventRecord>> queue;
 
     public Learner(BlockingQueue<Map.Entry<Integer, EventRecord>> queue) {
@@ -29,7 +31,22 @@ public class Learner implements Runnable {
                 Map.Entry<Integer, EventRecord> entry = queue.take();
                 Integer logNum = entry.getKey();
                 EventRecord record = entry.getValue();
-                saveCheckPoint(logNum, record);
+
+                int nextCheckPoint = getNextCheckPoint();
+                if (logNum == nextCheckPoint) {
+                    /* Detest holes and save checkpoint */
+                    saveCheckPoint(logNum, record);
+                } else if (logNum > nextCheckPoint) {
+                    /* Detect holes and recover checkpoint */
+                    recoverCheckPoint(logNum, record, nextCheckPoint);
+                } else {
+                    /* The checkpoint has already been saved.
+                     * Only update the reservationsBak, since reservations has already updated before */
+                    updateReservations(logNum, record, reservationsBak);
+
+                    /* Save new log entry in stable storage */
+                    FileUtils.appendLogToFile(logNum, record);
+                }
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -38,39 +55,32 @@ public class Learner implements Runnable {
     }
 
     private void saveCheckPoint(Integer logNum, EventRecord record) {
-        /* 1. Add all log numbers relate with the checkpoint into list */
-        List<Integer> checkList = new ArrayList<>();
-        for (int i = 1; i < Constants.CHECK_POINT_INTERVAL; i++) {
-            checkList.add(logNum - i);
-        }
+        /* 1. Fill holes before the checkpoint */
+        fillHoles(logNum);
 
-        /* 2. Keeping filling the holes until there is no hole */
-        while (!checkList.isEmpty()) {
-            List<Integer> tmp = new ArrayList<>();
-            for (Integer curLogNum : checkList) {
-                if (logList.containsKey(curLogNum)) {
-                    tmp.add(curLogNum);
-                    continue;
-                }
-                synchronized (Proposer.class) {
-                    Proposer proposer = new Proposer();
-                    proposer.request(curLogNum, null, true);
-                }
-            }
-            checkList.removeAll(tmp);
-
-            // Wait time for learner to save handle new commit message.
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        /* 3. Save reservations and log entry to file */
+        /* 2. Save reservations and log entry in stable storage */
         record.setCheckPoint(true);
-        FileUtils.saveReservationsToFile(reservations);
+        FileUtils.saveReservationsToFile(reservationsBak);
         FileUtils.appendLogToFile(logNum, record);
+    }
+
+    private void recoverCheckPoint(Integer logNum, EventRecord record, Integer checkPoint) {
+        /* 1. Fill holes before the checkpoint */
+        fillHoles(checkPoint);
+
+        /* 2. Save reservations and checkpoint in stable storage */
+        EventRecord checkPointRecord = logList.get(checkPoint);
+        checkPointRecord.setCheckPoint(true);
+        FileUtils.saveReservationsToFile(reservationsBak);
+        FileUtils.appendLogToFile(checkPoint, checkPointRecord);
+
+        /* 3. Check whether there are other missed checkpoints */
+        Map.Entry<Integer, EventRecord> entry = new AbstractMap.SimpleEntry<>(logNum, record);
+        try {
+            queue.put(entry);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void learnProposal(Integer logNum, EventRecord record,
@@ -89,24 +99,39 @@ public class Learner implements Runnable {
             Service.lostLogList.put(logNum, record);
 
         } else {
-            if (record.getType().equals(EventType.RESERVE)) {
-                Reservation reservation = record.getReservation();
-                reservations.add(reservation);
-            } else {
-                Reservation reservation = record.getReservation();
-                reservations.remove(reservation);
-            }
+            int nextCheckPoint = getNextCheckPoint();
+            updateReservations(logNum, record, reservations);
 
-            if (logNum % Constants.CHECK_POINT_INTERVAL == 0) {
-                /* When reach check point, use another thread to fill the holes and save check point */
+            if (logNum == nextCheckPoint) {
+                /* Update reservationBak when logNum <= next checkpoint*/
+                updateReservations(logNum, record, reservationsBak);
+
+                int maxLogNum = getMaxLogNum();
+                if (logNum == maxLogNum) {
+                    /* There is no larger log number handling checkpoint,
+                     * then notify the Learner to start handle checkpoint */
+                    Map.Entry<Integer, EventRecord> entry = new AbstractMap.SimpleEntry<>(logNum, record);
+                    try {
+                        queue.put(entry);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            } else if (logNum > nextCheckPoint) {
+                /* When exceed checkpoint, notify the Learner to start handle checkpoint */
                 Map.Entry<Integer, EventRecord> entry = new AbstractMap.SimpleEntry<>(logNum, record);
                 try {
                     queue.put(entry);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
             } else {
-                /* If not check point, then save new log entry in file */
+                /* Update reservationBak when logNum <= next checkpoint*/
+                updateReservations(logNum, record, reservationsBak);
+
+                /* Save new log entry in stable storage */
                 FileUtils.appendLogToFile(logNum, record);
             }
         }
@@ -117,13 +142,67 @@ public class Learner implements Runnable {
         if (FileUtils.isExist(Constants.LOG_FILE)) {
             // Recover data structure from file
             logList = FileUtils.recoverLogFromFile();
-            reservations = FileUtils.readReservationsFromFile();
+            reservationsBak = FileUtils.readReservationsFromFile();
             Service.setUnderRecovery(true);
         } else {
             // use TreeMap to keep the order of log entry based on keys
             logList = new TreeMap<>();
             reservations = new ArrayList<>();
+            reservationsBak = new ArrayList<>();
             Service.setUnderRecovery(false);
+        }
+    }
+
+    public static void recoverReservations() {
+        reservations = new ArrayList<>(reservationsBak);
+    }
+
+    public static void updateReservations(Integer logNum, EventRecord record, List<Reservation> reservationList) {
+        if (record.getType().equals(EventType.RESERVE)) {
+            /* Handle "reserve" commit */
+            Reservation reservation = record.getReservation();
+            int maxLogNum = getMaxLogNum();
+            boolean hasCancel = false;
+
+            for (int curLogNum = logNum + 1; curLogNum <= maxLogNum; curLogNum++) {
+                EventRecord curRecord = logList.get(curLogNum);
+                if (curRecord == null) {
+                    continue;
+                }
+
+                // If there is "cancel" log after current log number, then do not update reservations.
+                if (curRecord.getType().equals(EventType.CANCEL) && curRecord.getReservation().equals(reservation)) {
+                    hasCancel = true;
+                    break;
+                }
+            }
+
+            if (!hasCancel) {
+                reservationList.add(reservation);
+            }
+
+        } else {
+            /* Handle "cancel" commit */
+            Reservation reservation = record.getReservation();
+            int maxLogNum = getMaxLogNum();
+            boolean hasReserve = false;
+
+            for (int curLogNum = logNum + 1; curLogNum <= maxLogNum; curLogNum++) {
+                EventRecord curRecord = logList.get(curLogNum);
+                if (curRecord == null) {
+                    continue;
+                }
+
+                // If there is "cancel" log after current log number, then do not update reservations.
+                if (curRecord.getType().equals(EventType.RESERVE) && curRecord.getReservation().equals(reservation)) {
+                    hasReserve = true;
+                    break;
+                }
+            }
+
+            if (!hasReserve) {
+                reservationList.remove(reservation);
+            }
         }
     }
 
@@ -149,6 +228,18 @@ public class Learner implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Return the winning site for a given log position.
+     */
+    public static String winningSite(int logNumber) {
+        String winning_site = "";
+        if (logList.containsKey(logNumber)) {
+            EventRecord record = logList.get(logNumber);
+            winning_site = record.getProposerHost();
+        }
+        return winning_site;
     }
 
     /**
@@ -203,16 +294,20 @@ public class Learner implements Runnable {
     }
 
     /**
-     * Return the winning site for a given log position.
+     * Get the log number of checkpoint after the most recent checkpoint
      *
-     * */
-    public static String winningSite(int logNumber){
-        String winning_site = "";
-        if (logList.containsKey(logNumber)){
-            EventRecord record = logList.get(logNumber);
-            winning_site = record.getProposerHost();
+     * @return log number
+     */
+    public static int getNextCheckPoint() {
+        Integer maxCheckPointLogNum = 0;
+        for (Map.Entry<Integer, EventRecord> entry : logList.descendingMap().entrySet()) {
+            EventRecord curRecord = entry.getValue();
+            if (curRecord.isCheckPoint()) {
+                maxCheckPointLogNum = entry.getKey();
+                break;
+            }
         }
-        return winning_site;
+        return maxCheckPointLogNum + Constants.CHECK_POINT_INTERVAL;
     }
 
     public static TreeMap<Integer, EventRecord> getLogList() {
@@ -223,4 +318,7 @@ public class Learner implements Runnable {
         return reservations;
     }
 
+    public static List<Reservation> getReservationsBak() {
+        return reservationsBak;
+    }
 }
