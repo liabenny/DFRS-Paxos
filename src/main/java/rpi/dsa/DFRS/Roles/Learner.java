@@ -213,6 +213,7 @@ public class Learner implements Runnable {
      * @param maxLogNum max log entry number
      */
     public static void fillHoles(Integer maxLogNum) {
+        System.out.printf("<DEBUG> fill hole before LogNum: %d\n", maxLogNum);
         int logNum;
         while ((logNum = getLostLogNum(maxLogNum)) > 0) {
             System.out.println("<DEBUG> fill hole in logNum: " + logNum);
@@ -271,7 +272,6 @@ public class Learner implements Runnable {
      */
     private static int getLostLogNum(Integer maxLogNum) {
         System.out.println("<DEBUG> current log list (Learner): " + logList);
-        System.out.printf("<DEBUG> maxLogNum(Learner): %d\n", maxLogNum);
         for (int logNum = 1; logNum <= maxLogNum; logNum++) {
             if (!logList.containsKey(logNum)) {
                 return logNum;
