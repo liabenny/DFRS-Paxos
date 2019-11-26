@@ -25,8 +25,6 @@ public class Constants {
 
     public static final int BLOCKING_QUEUE_CAP = 8;
 
-    public static final int PROPOSER_RETRY_TIME = 3;
-
 
     /**
      * CMD - User Input Command
@@ -60,8 +58,6 @@ public class Constants {
      * HOSTS - Known hosts from configuration file
      */
     private static final String PATH = "knownhosts.json";
-
-    public static String hostName;
 
     public static final Map<String, Host> HOSTS;
 
