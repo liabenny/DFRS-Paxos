@@ -132,13 +132,20 @@ public class Proposer {
         if (message.getType().equals(ack)){
             ackCounter++;
 
-            // Print the ack information to sys err.
-            System.err.printf("[Proposer] Received %s(%d, [%d, '%s']) from %s\n",
-                    message.getType().getDesc(),
-                    message.getPropNum(),
-                    message.getNum(),
-                    message.getValue(),
-                    message.getSenderName());
+            if (ack.equals(MessageType.PROMISE)) {
+                // Print the promise information to sys err.
+                System.err.printf("[Proposer] Received %s(%d, [%d, '%s']) from %s\n",
+                        message.getType().getDesc(),
+                        message.getPropNum(),
+                        message.getNum(),
+                        message.getValue(),
+                        message.getSenderName());
+            } else {
+                // Print the ack information to sys err.
+                System.err.printf("[Proposer] Received ack(%d) from %s\n",
+                        message.getPropNum(), message.getSenderName());
+            }
+
         } else if (message.getType().equals(nack)){
             maxPropNum = Math.max(maxPropNum, message.getNum());
             nackCounter++;
@@ -242,18 +249,18 @@ public class Proposer {
         currentPhase = 2;
 
         /* retry PHASE1 and PHASE2 */
-        succeed = waitAck();
+        succeed = waitForMajority(currentPhase);
         while (!succeed && retry < 2) {
             retry++;
             reset();
             currentPhase = 1;
             propNum = generateNum();
             prepare(logNum, propNum);
-            succeed = waitForMajority(propNum);
+            succeed = waitForMajority(currentPhase);
             if (succeed) {
                 propose(logNum, propNum, value);
                 currentPhase = 2;
-                succeed = waitAck();
+                succeed = waitForMajority(currentPhase);
             }
         }
         if (!succeed) {
