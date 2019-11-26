@@ -133,8 +133,9 @@ public class Proposer {
             ackCounter++;
 
             // Print the ack information to sys err.
-            System.err.printf("[Proposer] Received %s(%d, '%s') from %s\n",
+            System.err.printf("[Proposer] Received %s(%d, [%d, '%s']) from %s\n",
                     message.getType().getDesc(),
+                    message.getPropNum(),
                     message.getNum(),
                     message.getValue(),
                     message.getSenderName());
