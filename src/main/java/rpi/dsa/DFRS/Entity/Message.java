@@ -69,34 +69,54 @@ public class Message implements Serializable {
     }
 
     /**
-     * Generate PREPARE(logNum, prepareNum) message
+     * Generate PREPARE(logNum, propNum) message
      *
-     * @param logNum     log entry that needs to decide for this Synod execution
-     * @param prepareNum propose number for prepare message
+     * @param logNum  log entry that needs to decide for this Synod execution
+     * @param propNum propose number for prepare message
      * @return message
      */
-    public static Message prepare(Integer logNum, Integer prepareNum) {
+    public static Message prepare(Integer logNum, Integer propNum) {
         Message message = new Message();
         message.setType(MessageType.PREPARE);
         message.setLogNum(logNum);
-        message.setPropNum(prepareNum);
+        message.setPropNum(propNum);
         return message;
     }
 
 
     /**
-     * Generate PROMISE(propNum, accNum, accValue) message
+     * Generate PROMISE(logNum, propNum, accNum, accValue) message
      *
+     * @param logNum   log entry number
+     * @param propNum  propose number
      * @param accNum   latest accept number
      * @param accValue latest accept value
      * @return message
      */
-    public static Message promise(Integer propNum, Integer accNum, EventRecord accValue) {
+    public static Message promise(Integer logNum, Integer propNum, Integer accNum, EventRecord accValue) {
         Message message = new Message();
         message.setType(MessageType.PROMISE);
+        message.setLogNum(logNum);
         message.setPropNum(propNum);
         message.setNum(accNum);
         message.setValue(accValue);
+        return message;
+    }
+
+    /**
+     * Generate PROMISE_NACK(logNum, propNum, nackNum) message
+     *
+     * @param logNum  log entry number
+     * @param propNum propose number
+     * @param nackNum max accept number among Synod instances corresponds to log numbers
+     * @return message
+     */
+    public static Message promiseNack(Integer logNum, Integer propNum, Integer nackNum) {
+        Message message = new Message();
+        message.setType(MessageType.PROMISE_NACK);
+        message.setLogNum(logNum);
+        message.setPropNum(propNum);
+        message.setNum(nackNum);
         return message;
     }
 
@@ -120,29 +140,33 @@ public class Message implements Serializable {
 
 
     /**
-     * Generate ACK(ackNum) message
+     * Generate ACK(logNum, ackNum) message
      *
+     * @param logNum log entry number
      * @param ackNum propose number that was accepted
      * @return message
      */
-    public static Message ack(Integer ackNum) {
+    public static Message ack(Integer logNum, Integer ackNum) {
         Message message = new Message();
         message.setType(MessageType.ACK);
+        message.setLogNum(logNum);
         message.setPropNum(ackNum);
         return message;
     }
 
 
     /**
-     * Generate NACK(nackNum) message
+     * Generate NACK(logNum, propNum, nackNum) message
      *
      * @param nackNum max accept number among Synod instances corresponds to log numbers
      * @return message
      */
-    public static Message nack(Integer nackNum) {
+    public static Message nack(Integer logNum, Integer propNum, Integer nackNum) {
         Message message = new Message();
         message.setType(MessageType.NACK);
-        message.setPropNum(nackNum);
+        message.setLogNum(logNum);
+        message.setPropNum(propNum);
+        message.setNum(nackNum);
         return message;
     }
 

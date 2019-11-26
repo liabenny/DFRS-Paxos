@@ -121,21 +121,23 @@ public class Acceptor implements Runnable {
         if (propNum > maxAccNum) {
             state.setMaxAccNum(propNum);
             if (accEntry == null) {
-                response = Message.promise(propNum, null, null);
+                response = Message.promise(logNum, propNum, null, null);
             } else {
-                response = Message.promise(propNum, accEntry.getKey(), accEntry.getValue());
+                response = Message.promise(logNum, propNum, accEntry.getKey(), accEntry.getValue());
             }
 
-            System.err.printf("[Acceptor] Sending promise(%d, [%d, '%s']) to %s\n",
+            System.err.printf("[Acceptor] Sending promise(%d, %d, [%d, '%s']) to %s\n",
+                    response.getLogNum(),
                     response.getPropNum(),
                     response.getNum(),
                     response.getValue(),
                     prepare.getSenderName());
 
         } else {
-            response = Message.nack(maxAccNum);
+            response = Message.promiseNack(logNum, propNum, maxAccNum);
 
-            System.err.printf("[Acceptor] Sending nack(%d) to %s\n", maxAccNum, prepare.getSenderName());
+            System.err.printf("[Acceptor] Sending promise_nack(%d, %d, %d) to %s\n",
+                    logNum, propNum, maxAccNum, prepare.getSenderName());
         }
 
         /* Reply to proposer */
@@ -167,23 +169,26 @@ public class Acceptor implements Runnable {
 
         String previousWinner = Learner.winningSite(logNum - 1);
         String propHost = propValue.getProposerHost();
-        if (propNum == 0 && !previousWinner.equals(propHost)){
-            response = Message.nack(maxAccNum);
+        if (propNum == 0 && !previousWinner.equals(propHost)) {
+            response = Message.nack(logNum, propNum, maxAccNum);
 
-            System.err.printf("[Acceptor] Sending nack(%d) to %s\n", maxAccNum, proposal.getSenderName());
+            System.err.printf("[Acceptor] Sending nack(%d, %d, %d) to %s\n",
+                    logNum, propNum, maxAccNum, proposal.getSenderName());
 
-        } else{
+        } else {
             if (propNum >= maxAccNum) {
                 Map.Entry<Integer, EventRecord> accEntry = new AbstractMap.SimpleEntry<>(propNum, propValue);
                 state.setAccEntry(accEntry);
                 state.setMaxAccNum(propNum);
-                response = Message.ack(propNum);
+                response = Message.ack(logNum, propNum);
 
-                System.err.printf("[Acceptor] Sending ack(%d) to %s\n", propNum, proposal.getSenderName());
+                System.err.printf("[Acceptor] Sending ack(%d, %d) to %s\n",
+                        logNum, propNum, proposal.getSenderName());
             } else {
-                response = Message.nack(maxAccNum);
+                response = Message.nack(logNum, propNum, maxAccNum);
 
-                System.err.printf("[Acceptor] Sending nack(%d) to %s\n", maxAccNum, proposal.getSenderName());
+                System.err.printf("[Acceptor] Sending nack(%d, %d, %d) to %s\n",
+                        logNum, propNum, maxAccNum, proposal.getSenderName());
             }
         }
 
