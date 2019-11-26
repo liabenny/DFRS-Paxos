@@ -131,7 +131,7 @@ public class Proposer {
     private void handleResponse(Message message, MessageType ack, MessageType nack){
         if (message.getType().equals(ack)){
             ackCounter++;
-            System.out.printf("<DEBUG> ack: %s  messageType: %s\n", ack.getDesc(), message.getType().getDesc());
+//            System.out.printf("<DEBUG> ack: %s  messageType: %s\n", ack.getDesc(), message.getType().getDesc());
             if (ack.equals(MessageType.PROMISE)) {
                 // Print the promise information to sys err.
                 System.err.printf("[Proposer] Received %s(%d, [%d, '%s']) from %s\n",
@@ -178,18 +178,17 @@ public class Proposer {
                     /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
                      *     and nacks should be ignored, since a majority was already found. */
                     if (currPhase == 1){
-                        System.out.println("<DEBUG> phase1");
                         handleResponse(message, MessageType.PROMISE, MessageType.PROMISE_NACK);
                     } else if (currPhase == 2){
-                        System.out.println("<DEBUG> phase2");
                         handleResponse(message, MessageType.ACK, MessageType.NACK);
                     }
 
                     /* 4. Receive ack from majority acceptors */
                     if (ackCounter > Constants.HOSTS.size() / 2) {
+                        reset();
                         return true;
                     } else if (nackCounter > Constants.HOSTS.size() / 2) {
-                        nackCounter = 0;
+                        reset();
                         return false;
                     }
                 } catch (java.net.SocketTimeoutException e){
@@ -201,6 +200,7 @@ public class Proposer {
         }
 
         // We should not be reaching this line. If we do somehow return false.
+        reset();
         return false;
     }
 
