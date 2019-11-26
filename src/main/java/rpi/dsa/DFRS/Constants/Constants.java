@@ -61,6 +61,8 @@ public class Constants {
      */
     private static final String PATH = "knownhosts.json";
 
+    public static String hostName;
+
     public static final Map<String, Host> HOSTS;
 
     public static final Map<Integer, String> INDEX_TO_NAME;

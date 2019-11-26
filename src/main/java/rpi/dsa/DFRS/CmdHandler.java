@@ -11,7 +11,7 @@ import java.util.*;
 
 class CmdHandler {
 
-    static void reserve(String[] args, String host) {
+    static void reserve(String[] args) {
         /* 1. Check format of parameters */
         if (args.length != 3) {
             System.out.println("Invalid parameters.");
@@ -62,12 +62,12 @@ class CmdHandler {
 
         /* 5. Start new Synod instance */
         Reservation reservation = new Reservation(cliName, flights);
-        EventRecord record = new EventRecord(EventType.RESERVE, reservation, host);
+        EventRecord record = new EventRecord(EventType.RESERVE, reservation, Constants.hostName);
 
         boolean succeed;
         synchronized (Proposer.class) {
             Proposer proposer = new Proposer();
-            succeed = proposer.request(logNum, record);
+            succeed = proposer.request(logNum, record, false);
         }
 
         if (succeed) {
@@ -77,7 +77,7 @@ class CmdHandler {
         }
     }
 
-    static void cancel(String[] args, String host) {
+    static void cancel(String[] args) {
         /* 1. Check format of parameters */
         if (args.length != 2) {
             System.out.println("Invalid parameters.");
@@ -104,11 +104,11 @@ class CmdHandler {
         }
 
         /* 4. Start new Synod instance */
-        EventRecord record = new EventRecord(EventType.CANCEL, target, host);
+        EventRecord record = new EventRecord(EventType.CANCEL, target, Constants.hostName);
         boolean succeed;
         synchronized (Proposer.class) {
             Proposer proposer = new Proposer();
-            succeed = proposer.request(logNum, record);
+            succeed = proposer.request(logNum, record, false);
         }
         if (succeed) {
             System.out.println("Reservation for " + cliName + " cancelled.");

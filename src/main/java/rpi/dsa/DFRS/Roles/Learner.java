@@ -54,7 +54,7 @@ public class Learner implements Runnable {
                 }
                 synchronized (Proposer.class) {
                     Proposer proposer = new Proposer();
-                    proposer.request(curLogNum, null);
+                    proposer.request(curLogNum, null, true);
                 }
             }
             checkList.removeAll(tmp);
@@ -139,7 +139,7 @@ public class Learner implements Runnable {
             System.out.println("<DEBUG> fill hole in logNum: " + logNum);
             synchronized (Proposer.class) {
                 Proposer proposer = new Proposer();
-                proposer.request(logNum, null);
+                proposer.request(logNum, null, true);
             }
 
             // Wait time for learner to save handle new commit message.

@@ -164,17 +164,27 @@ public class Acceptor implements Runnable {
         Integer propNum = proposal.getPropNum();
         EventRecord propValue = proposal.getValue();
         Message response;
-        if (propNum >= maxAccNum) {
-            Map.Entry<Integer, EventRecord> accEntry = new AbstractMap.SimpleEntry<>(propNum, propValue);
-            state.setAccEntry(accEntry);
-            state.setMaxAccNum(propNum);
-            response = Message.ack(propNum);
 
-            System.err.printf("[Acceptor] Sending ack(%d) to %s\n", propNum, proposal.getSenderName());
-        } else {
+        String previousWinner = Learner.winningSite(logNum - 1);
+        String propHost = propValue.getProposerHost();
+        if (propNum == 0 && !previousWinner.equals(propHost)){
             response = Message.nack(maxAccNum);
 
             System.err.printf("[Acceptor] Sending nack(%d) to %s\n", maxAccNum, proposal.getSenderName());
+
+        } else{
+            if (propNum >= maxAccNum) {
+                Map.Entry<Integer, EventRecord> accEntry = new AbstractMap.SimpleEntry<>(propNum, propValue);
+                state.setAccEntry(accEntry);
+                state.setMaxAccNum(propNum);
+                response = Message.ack(propNum);
+
+                System.err.printf("[Acceptor] Sending ack(%d) to %s\n", propNum, proposal.getSenderName());
+            } else {
+                response = Message.nack(maxAccNum);
+
+                System.err.printf("[Acceptor] Sending nack(%d) to %s\n", maxAccNum, proposal.getSenderName());
+            }
         }
 
         /* Reply to proposer */

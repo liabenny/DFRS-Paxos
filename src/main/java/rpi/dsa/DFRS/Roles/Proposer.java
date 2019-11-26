@@ -41,7 +41,7 @@ public class Proposer {
     static {
         String ip = Service.myHost.getIpAddr();
         Integer port = Service.myHost.getUdpStartPort();
-        pid = Constants.NAME_TO_INDEX.get(Service.hostName);
+        pid = Constants.NAME_TO_INDEX.get(Constants.hostName);
 
         try {
             InetAddress address = InetAddress.getByName(ip);
@@ -84,7 +84,6 @@ public class Proposer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
         /* 2. Set a timeout for waiting reply */
         long start = System.currentTimeMillis();
@@ -158,10 +157,9 @@ public class Proposer {
     private boolean waitForMajority(int currPhase){
         try {
             /* 1. Set a timeout for waiting ack */
-            long start = System.currentTimeMillis();
-            socket.setSoTimeout(Math.toIntExact(Constants.TIMEOUT_MS));
+            long end = System.currentTimeMillis() + Constants.TIMEOUT_MS;
 
-            while (true) {
+            while (System.currentTimeMillis() <= end) {
                 /* 2. Keep receiving ack message */
                 byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
                 DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
@@ -182,21 +180,10 @@ public class Proposer {
                 } else if (nackCounter > Constants.HOSTS.size() / 2) {
                     nackCounter = 0;
                     return false;
-                } else{
-                    /* 5. Update our socket timeout with the remaining time */
-                    long elapsed_ms = System.currentTimeMillis() - start;
-                    int remaining_ms = Math.toIntExact(Constants.TIMEOUT_MS - elapsed_ms);
-                    if(remaining_ms > 0){
-                        socket.setSoTimeout(remaining_ms);
-                    } else{
-                        return false;
-                    }
                 }
             }
         } catch (java.net.SocketTimeoutException e){
-            /* 6. Didn't receive enough ack in time */
-            nackCounter = 0;
-            return false;
+            // Pass
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -215,7 +202,7 @@ public class Proposer {
      * @param value  recommended value for proposal
      * @return if the recommended value was adopted, then return true. Otherwise, return false.
      */
-    public boolean request(Integer logNum, EventRecord value) {
+    public boolean request(Integer logNum, EventRecord value, boolean recovery) {
         /* Prepare our proposal number and phase variables */
         int propNum = 0;
         int currentPhase = 0;
@@ -223,7 +210,8 @@ public class Proposer {
         int retry = 0;
 
         /* Paxos Optimization, if we were the winning site from the previous log number we can skip phase 1.  */
-        if (!Learner.winningSite(logNum-1).equals(Service.hostName)) {
+        String previousWinner = Learner.winningSite(logNum - 1);
+        if (recovery || !previousWinner.equals(Constants.hostName)) {
             /* Choose a propose number */
             propNum = generateNum();
 
