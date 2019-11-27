@@ -3,6 +3,7 @@ package rpi.dsa.DFRS.Entity;
 import rpi.dsa.DFRS.Utils.MsgUtil;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class EventRecord implements Serializable {
 
@@ -66,5 +67,19 @@ public class EventRecord implements Serializable {
                 reservation != null ? reservation.getClientName() : "null",
                 reservation != null ? MsgUtil.ListToString(reservation.getFlightNums()) : "null",
                 proposerHost);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EventRecord record = (EventRecord) o;
+        return type == record.type &&
+                Objects.equals(reservation, record.reservation);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, reservation);
     }
 }
