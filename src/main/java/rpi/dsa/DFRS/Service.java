@@ -13,8 +13,6 @@ import static rpi.dsa.DFRS.Constants.Constants.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -111,9 +109,15 @@ public class Service {
         /* 3. Fill in the holes before maxLogNum */
         Learner.fillHoles(maxLogNum);
 
-        /* 4. Replay log from last checkpoint to the end */
+        /* 4. Get new maxLogNum, since it's possible to receive new commit when recovers */
+        maxLogNum = Learner.getMaxLogNum();
+
+        /* 5. Replay log from last checkpoint to the end */
         for (int curLogNum = lastCheckPoint + 1; curLogNum <= maxLogNum; curLogNum++) {
             EventRecord record = logList.get(curLogNum);
+            if (record == null) {
+                continue;
+            }
 
             /* Replay log and update reservation */
             if (record.getType().equals(EventType.RESERVE)) {
@@ -136,7 +140,7 @@ public class Service {
             }
         }
 
-        /* 5. Set the flag when finish recovery */
+        /* 6. Set the flag when finish recovery */
         Learner.recoverReservations();
         setUnderRecovery(false);
     }
