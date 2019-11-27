@@ -60,8 +60,8 @@ public class Host {
 
     @Override
     public String toString() {
-        return "udpStartPort=" + udpStartPort +
+        return "[udpStartPort=" + udpStartPort +
                         ", udpEndPort=" + udpEndPort +
-                        ", ipAddr='" + ipAddr + '\'';
+                        ", ipAddr='" + ipAddr + "']";
     }
 }
