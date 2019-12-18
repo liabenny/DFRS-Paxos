@@ -21,6 +21,8 @@ function compile(){
 
     cp ./run.sh ./bin/
     cp ./lib/fastjson-1.2.62.jar ./bin/
+    cp ./knownhosts.json ./bin/knownhosts.json
 }
 
 compile
+exit(0)
