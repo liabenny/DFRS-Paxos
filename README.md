@@ -87,7 +87,7 @@ The flight reservation service would allow users to reserve or cancel reservatio
 
 1. To make a reservation, the user enter the following
 
-   ```shell
+   ```
    % reserve <client_name> <CSV_list_of_flight_numbers>
    ```
 
