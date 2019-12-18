@@ -266,54 +266,6 @@ public class Proposer {
             e.printStackTrace();
         }
     }
-//
-//    /**
-//     * Waits for responses from a majority of sites. Will return true if
-//     * a majority responds positively and false if the timeout is reached or a
-//     * majority respond negatively.
-//     *
-//     * */
-//    private boolean waitForMajority(int currPhase){
-//        try {
-//            /* 1. Set a timeout for waiting ack */
-//            long end = System.currentTimeMillis() + Constants.TIMEOUT_MS;
-//
-//            while (System.currentTimeMillis() <= end) {
-//                try{
-//                    /* 2. Keep receiving ack message */
-//                    byte[] bytes = new byte[Constants.MESSAGE_LENGTH];
-//                    DatagramPacket datagramPacket = new DatagramPacket(bytes, Constants.MESSAGE_LENGTH);
-//                    socket.receive(datagramPacket);
-//                    Message message = MsgUtil.deserialize(bytes);
-//
-//                    /* 3. Check phase and handle messages accordingly. If we are in phase 2, phase one acks
-//                     *     and nacks should be ignored, since a majority was already found. */
-//                    if (currPhase == 1){
-//                        handleResponse(message, MessageType.PROMISE, MessageType.PROMISE_NACK);
-//                    } else if (currPhase == 2){
-//                        handleResponse(message, MessageType.ACK, MessageType.NACK);
-//                    }
-//
-//                    /* 4. Receive ack from majority acceptors */
-//                    if (ackCounter > Constants.HOSTS.size() / 2) {
-//                        reset();
-//                        return true;
-//                    } else if (nackCounter > Constants.HOSTS.size() / 2) {
-//                        reset();
-//                        return false;
-//                    }
-//                } catch (java.net.SocketTimeoutException e){
-//                    // Pass
-//                }
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//        // We should not be reaching this line. If we do somehow return false.
-//        reset();
-//        return false;
-//    }
 
     private boolean waitPromise(Integer logNum, Integer propNum) {
         /* 1. Set a timeout for waiting promise */
