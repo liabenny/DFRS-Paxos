@@ -87,27 +87,19 @@ The flight reservation service would allow users to reserve or cancel reservatio
 
 1. To make a reservation, the user enter the following
 
-   ```
-   % reserve <client_name> <CSV_list_of_flight_numbers>
-   ```
+   > % reserve <client_name> <CSV_list_of_flight_numbers>
 
 2. A client can cancel their flight reservation by entering
 
-   ```
-   % cancel <client_name> 
-   ```
+   > % cancel <client_name> 
 
 3. To display the list of all reservations, enter the following command
 
-   ```
-   % view
-   ```
+   > % view
 
 4. To display the contents of log, enter the following command
 
-   ```
-   % log
-   ```
+   > % log
 
 
 
